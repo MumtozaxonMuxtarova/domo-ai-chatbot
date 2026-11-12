@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "gas_advice",
+      "title": {
+        "uz": "Gaz hidi sezilganda — huquqiy axborot",
+        "ru": "Действия при запахе газа — правовая информация"
+      },
+      "url": "https://advice.adliya.uz/oz/document/1892",
+      "scope": "uzbekistan"
+    },
+    {
+      "id": "fire_rules",
+      "title": {
+        "uz": "Yong‘in xavfsizligi qoidalari, 13-band",
+        "ru": "Правила пожарной безопасности, пункт 13"
+      },
+      "url": "https://lex.uz/docs/-5056473",
+      "scope": "uzbekistan"
+    },
+    {
+      "id": "emergency_112",
+      "title": {
+        "uz": "112 yagona dispetcherlik xizmati — 304-son qaror",
+        "ru": "Единая диспетчерская служба 112 — постановление № 304"
+      },
+      "url": "https://lex.uz/docs/-6945899",
+      "scope": "uzbekistan"
+    },
+    {
+      "id": "het_contact",
+      "title": {
+        "uz": "HET — 1154 aloqa markazi",
+        "ru": "РЭС — контактный центр 1154"
+      },
+      "url": "https://www.het.uz/oz/Tavsiyalar?id=contact",
+      "scope": "uzbekistan"
+    },
+    {
+      "id": "energy_safety",
+      "title": {
+        "uz": "Energetika vazirligi — elektr simlari xavfsizligi",
+        "ru": "Министерство энергетики — безопасность электрических проводов"
+      },
+      "url": "https://gov.uz/oz/minenergy/news/view/138814",
+      "scope": "uzbekistan"
+    },
+    {
+      "id": "cdc_electric",
+      "title": {
+        "uz": "CDC — suv va elektr xavfsizligi; faqat texnik tavsiyalar",
+        "ru": "CDC — вода и электробезопасность; только технические рекомендации"
+      },
+      "url": "https://www.cdc.gov/natural-disasters/response/what-to-do-protect-yourself-from-electrical-hazards.html",
+      "scope": "general_safety"
+    }
+  ],
+  "documents": [
+    {
+      "id": "electricity_balance",
+      "category": "electricity",
+      "title": {
+        "uz": "Elektr hisobidagi qoldiqni tekshirish",
+        "ru": "Проверка остатка на счёте за электричество"
+      },
+      "files": {
+        "uz": "electricity/balance.uz.md",
+        "ru": "electricity/balance.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    },
+    {
+      "id": "utility_payments",
+      "category": "general",
+      "title": {
+        "uz": "Elektr, gaz, suv va isitish uchun to‘lov",
+        "ru": "Оплата электричества, газа, воды и отопления"
+      },
+      "files": {
+        "uz": "general/payments.uz.md",
+        "ru": "general/payments.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    },
+    {
+      "id": "payment_delay",
+      "category": "general",
+      "title": {
+        "uz": "To‘lov hisobda ko‘rinmayapti",
+        "ru": "Платёж не отображается на счёте"
+      },
+      "files": {
+        "uz": "general/payment_delay.uz.md",
+        "ru": "general/payment_delay.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    },
+    {
+      "id": "debt_check",
+      "category": "general",
+      "title": {
+        "uz": "Qarzdorlikni tekshirish",
+        "ru": "Проверка задолженности"
+      },
+      "files": {
+        "uz": "general/debt.uz.md",
+        "ru": "general/debt.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    },
+    {
+      "id": "electricity_issues",
+      "category": "electricity",
+      "title": {
+        "uz": "Elektr ta’minoti muammosi va ochiq sim xavfi",
+        "ru": "Проблемы электроснабжения и опасные провода"
+      },
+      "files": {
+        "uz": "electricity/issues.uz.md",
+        "ru": "electricity/issues.ru.md"
+      },
+      "content_type": "demo_with_official_safety",
+      "source_ids": [
+        "het_contact",
+        "energy_safety",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "gas_issues",
+      "category": "gas",
+      "title": {
+        "uz": "Gaz ta’minoti muammosi va gaz sizishi",
+        "ru": "Проблемы газоснабжения и утечка газа"
+      },
+      "files": {
+        "uz": "gas/issues.uz.md",
+        "ru": "gas/issues.ru.md"
+      },
+      "content_type": "demo_with_official_safety",
+      "source_ids": [
+        "gas_advice",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "water_issues",
+      "category": "water",
+      "title": {
+        "uz": "Suv ta’minoti, sizish va elektr xavfi",
+        "ru": "Водоснабжение, протечка и электрическая опасность"
+      },
+      "files": {
+        "uz": "water/issues.uz.md",
+        "ru": "water/issues.ru.md"
+      },
+      "content_type": "demo_with_official_safety",
+      "source_ids": [
+        "cdc_electric",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "heating_issues",
+      "category": "heating",
+      "title": {
+        "uz": "Markaziy isitish va alohida isitish qurilmasi",
+        "ru": "Центральное отопление и отдельный отопительный прибор"
+      },
+      "files": {
+        "uz": "heating/issues.uz.md",
+        "ru": "heating/issues.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    },
+    {
+      "id": "fire_safety",
+      "category": "general",
+      "title": {
+        "uz": "Yong‘in: 101 va 112",
+        "ru": "Пожар: 101 и 112"
+      },
+      "files": {
+        "uz": "general/fire_safety.uz.md",
+        "ru": "general/fire_safety.ru.md"
+      },
+      "content_type": "demo_with_official_safety",
+      "source_ids": [
+        "fire_rules",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "demo_scope",
+      "category": "general",
+      "title": {
+        "uz": "DEMO chegaralari va operatorga yo‘naltirish",
+        "ru": "Ограничения DEMO и обращение к оператору"
+      },
+      "files": {
+        "uz": "general/demo_scope.uz.md",
+        "ru": "general/demo_scope.ru.md"
+      },
+      "content_type": "demo_guidance",
+      "source_ids": []
+    }
+  ]
+}

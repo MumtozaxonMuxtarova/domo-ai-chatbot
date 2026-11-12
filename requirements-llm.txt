@@ -1,0 +1,3 @@
+# Optional standalone Groq service; no Groq SDK needed.
+-r requirements.txt
+httpx==0.28.1

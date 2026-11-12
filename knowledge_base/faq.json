@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "electricity_balance",
+      "category": "electricity",
+      "question": {
+        "uz": "⚡ Elektr hisobimda qancha pul bor?",
+        "ru": "⚡ Как проверить баланс за электричество?"
+      },
+      "answer": {
+        "uz": "Men elektr hisobingizdagi qoldiqni ko‘ra olmayman. Balansni xizmat ko‘rsatuvchingiz taqdim etgan rasmiy usul orqali tekshiring. Qaysi tashkilot xizmat ko‘rsatishini aytsangiz, bizda shu tashkilot uchun tasdiqlangan yo‘riqnoma bor-yo‘qligini aniqlashtiraman. Hisobingiz holatini xizmat ko‘rsatuvchining rasmiy yordam xizmati tekshirishi kerak.",
+        "ru": "Я не могу посмотреть остаток на вашем счёте за электричество. Проверьте баланс официальным способом, который предоставляет ваш поставщик. Если вы назовёте организацию, я уточню, есть ли у нас подтверждённая инструкция для неё. Проверить состояние вашего счёта может официальная служба поддержки поставщика."
+      },
+      "source_ids": [
+        "electricity_balance"
+      ],
+      "requires_account_data": true,
+      "status": "approved",
+      "content_type": "demo_guidance",
+      "updated_at": "2026-11-11"
+    },
+    {
+      "id": "utility_payment",
+      "category": "general",
+      "question": {
+        "uz": "💳 To‘lovni qanday amalga oshiraman?",
+        "ru": "💳 Как оплатить коммунальные услуги?"
+      },
+      "answer": {
+        "uz": "Elektr, gaz, suv yoki isitish uchun xizmat ko‘rsatuvchingiz tasdiqlagan to‘lov kanalidan foydalaning. To‘lovni tasdiqlashdan oldin xizmat turi, shaxsiy hisob raqami va summani tekshiring, keyin chekni saqlang. Bu bot pul qabul qilmaydi va to‘lov o‘tkazmaydi.",
+        "ru": "Для оплаты электричества, газа, воды или отопления используйте платёжный канал, подтверждённый вашим поставщиком. Перед подтверждением проверьте вид услуги, номер лицевого счёта и сумму, затем сохраните чек. Этот бот не принимает деньги и не проводит платежи."
+      },
+      "source_ids": [
+        "utility_payments"
+      ],
+      "requires_account_data": false,
+      "status": "approved",
+      "content_type": "demo_guidance",
+      "updated_at": "2026-11-11"
+    },
+    {
+      "id": "payment_delay",
+      "category": "general",
+      "question": {
+        "uz": "🧾 To‘lov qildim, lekin hisobga tushmadi",
+        "ru": "🧾 Платёж не поступил на счёт"
+      },
+      "answer": {
+        "uz": "Chekni saqlang. To‘lov qilgan xizmatingizda operatsiya holati, xizmat turi va hisob raqamini tekshiring. Pul yechilgan, lekin kommunal hisobda ko‘rinmayotgan bo‘lsa, to‘lov xizmati va xizmat ko‘rsatuvchining rasmiy yordamiga murojaat qiling. Men tranzaksiyani tekshira olmayman va tushish muddatini tasdiqlay olmayman.",
+        "ru": "Сохраните чек. В сервисе, через который вы платили, проверьте статус операции, вид услуги и номер лицевого счёта. Если деньги списаны, но платёж не отображается на коммунальном счёте, обратитесь в официальную поддержку платёжного сервиса и поставщика. Я не могу проверить транзакцию или подтвердить срок зачисления."
+      },
+      "source_ids": [
+        "payment_delay"
+      ],
+      "requires_account_data": true,
+      "status": "approved",
+      "content_type": "demo_guidance",
+      "updated_at": "2026-11-11"
+    },
+    {
+      "id": "debt_check",
+      "category": "general",
+      "question": {
+        "uz": "📄 Qarzdorligimni qanday tekshiraman?",
+        "ru": "📄 Как проверить задолженность?"
+      },
+      "answer": {
+        "uz": "Men sizning qarzdorligingizni ko‘ra olmayman. Qaysi xizmat — elektr, gaz, suv yoki isitish — bo‘yicha tekshirmoqchisiz? Qarzdorlikni xizmat ko‘rsatuvchingiz taqdim etgan rasmiy usul orqali aniqlang. Summa bo‘yicha e’tirozingiz bo‘lsa, hisob-kitobni rasmiy yordam xizmatidan tushuntirishni so‘rang.",
+        "ru": "Я не могу посмотреть вашу задолженность. По какой услуге вы хотите её проверить: электричество, газ, вода или отопление? Уточните задолженность официальным способом, который предоставляет поставщик. Если вы не согласны с суммой, запросите разъяснение расчёта в его официальной службе поддержки."
+      },
+      "source_ids": [
+        "debt_check"
+      ],
+      "requires_account_data": true,
+      "status": "approved",
+      "content_type": "demo_guidance",
+      "updated_at": "2026-11-11"
+    },
+    {
+      "id": "utility_issue",
+      "category": "general",
+      "question": {
+        "uz": "🔧 Elektr, gaz yoki suv bo‘yicha muammo",
+        "ru": "🔧 Проблема с электричеством, газом или водой"
+      },
+      "answer": {
+        "uz": "Qaysi xizmatda muammo bor: elektr, gaz, suv yoki isitish?\n\nAgar xavfli belgilar bo‘lmasa, viloyat/tumaningizni, muammo boshlangan vaqtni va u faqat xonadoningizdami yoki boshqa joylarda ham kuzatilayotganini yozing.\n\nMen uzilish sababini yoki xizmat tiklanish vaqtini ko‘ra olmayman. Mavjud tasdiqlangan ma’lumot asosida keyingi qadamni tushuntiraman.",
+        "ru": "С какой услугой возникла проблема: электричество, газ, вода или отопление?\n\nЕсли опасных признаков нет, укажите область/район, время возникновения проблемы и наблюдается ли она только в вашей квартире или также в других местах.\n\nЯ не вижу причину отключения или время восстановления услуги. Я объясню следующий шаг на основе имеющейся подтверждённой информации."
+      },
+      "source_ids": [
+        "electricity_issues",
+        "gas_issues",
+        "water_issues",
+        "heating_issues"
+      ],
+      "requires_account_data": false,
+      "status": "approved",
+      "content_type": "demo_guidance",
+      "updated_at": "2026-11-11"
+    }
+  ]
+}

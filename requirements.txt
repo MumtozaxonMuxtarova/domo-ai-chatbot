@@ -1,0 +1,4 @@
+# Faqat 1-bosqichda ishlatiladigan kutubxonalar.
+aiogram==3.31.0
+pydantic==2.13.5
+python-dotenv==1.2.4

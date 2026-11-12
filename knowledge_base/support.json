@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "utilities": [
+    {
+      "id": "electricity",
+      "question": {
+        "uz": "⚡ Elektr muammosi",
+        "ru": "⚡ Проблема с электричеством"
+      },
+      "answer": {
+        "uz": "Elektr qachondan beri yo‘q? Sizga oldindan ma’lum bo‘lsa, qo‘shnilarda ham shu muammo bor-yo‘qligini ayting. Elektr tarmoqlari bo‘yicha 1154 aloqa markaziga murojaat qilishingiz mumkin. Men tarmoq holatini tekshira olmayman yoki elektr qachon kelishini tasdiqlay olmayman.",
+        "ru": "Когда отключилось электричество? Если вам уже известно, сообщите, есть ли такая же проблема у соседей. По вопросам электрических сетей можно обратиться в контактный центр 1154. Я не могу проверить состояние сети или подтвердить время восстановления электроснабжения."
+      },
+      "document_ids": [
+        "electricity_issues"
+      ],
+      "source_ids": [
+        "het_contact"
+      ]
+    },
+    {
+      "id": "gas",
+      "question": {
+        "uz": "🔥 Gaz muammosi",
+        "ru": "🔥 Проблема с газом"
+      },
+      "answer": {
+        "uz": "Gaz kelmayaptimi yoki bosim pasayganmi? Gaz hidi yoki sizish gumoni bildirilmagan ta’minot muammosi uchun hududiy gaz tashkilotining rasmiy yordamiga murojaat qiling. Men gaz bosimini tekshira olmayman yoki ta’minotni boshqara olmayman. Gaz hidi yoki sizish gumoni bo‘lsa, quyidagi A xavfsizlik javobi qo‘llanadi.",
+        "ru": "Газ не поступает или снизилось давление? Если запах газа или подозрение на утечку не заявлены, по вопросу снабжения обратитесь в официальную поддержку территориальной газовой организации. Я не могу проверить давление или управлять подачей газа. При запахе газа или подозрении на утечку применяется ответ по безопасности A ниже."
+      },
+      "document_ids": [
+        "gas_issues"
+      ],
+      "source_ids": []
+    },
+    {
+      "id": "water",
+      "question": {
+        "uz": "🚰 Suv muammosi",
+        "ru": "🚰 Проблема с водой"
+      },
+      "answer": {
+        "uz": "Suv kelmayaptimi, bosim pastmi yoki sizish bormi? Hududingiz va muammo boshlangan vaqtni ayting. Oddiy ta’minot muammosida hududiy suv ta’minotchisining rasmiy yordamiga murojaat qiling. Men suv sifatini yoki tiklanish vaqtini tasdiqlay olmayman. Suv elektr jihozlariga yetgan bo‘lsa, quyidagi D xavfsizlik javobi qo‘llanadi.",
+        "ru": "Воды нет, слабый напор или есть протечка? Укажите район и время возникновения проблемы. При обычной проблеме со снабжением обратитесь в официальную поддержку местного поставщика воды. Я не могу подтвердить качество воды или время восстановления подачи. Если вода достигла электрооборудования, применяется ответ по безопасности D ниже."
+      },
+      "document_ids": [
+        "water_issues"
+      ],
+      "source_ids": []
+    },
+    {
+      "id": "heating",
+      "question": {
+        "uz": "♨️ Isitish muammosi",
+        "ru": "♨️ Проблема с отоплением"
+      },
+      "answer": {
+        "uz": "Muammo markaziy isitishdami yoki alohida isitish qurilmasidami? Oddiy ta’minot muammosida issiqlik ta’minotchisi, uyingizga xizmat ko‘rsatuvchi tashkilot yoki qurilma bo‘yicha vakolatli mutaxassisga murojaat qiling. Men qozon yoki isitish tizimini masofadan tekshira olmayman. Gaz hidi, yong‘in yoki elektr xavfi bildirilsa, tegishli xavfsizlik javobi qo‘llanadi.",
+        "ru": "Проблема с центральным отоплением или отдельным отопительным прибором? При обычной проблеме со снабжением обратитесь к поставщику тепла, в обслуживающую дом организацию или к уполномоченному специалисту по прибору. Я не могу дистанционно проверить котёл или отопительную систему. При сообщении о запахе газа, пожаре или электрической опасности применяется соответствующий ответ по безопасности."
+      },
+      "document_ids": [
+        "heating_issues"
+      ],
+      "source_ids": []
+    }
+  ],
+  "safety": [
+    {
+      "id": "gas_leak",
+      "question": {
+        "uz": "⚠️ A — Gaz hidi yoki sizishi",
+        "ru": "⚠️ A — Запах или утечка газа"
+      },
+      "answer": {
+        "uz": "Gaz sizishi ehtimoli bor. Olov yoqmang va chekmang. Chiroq va elektr jihozlarini yoqmang hamda o‘chirmang.\n\nImkon bo‘lsa gaz jo‘mragini yoping. Xavfsiz bo‘lsa eshik va derazalarni oching. Xavfli hududdan chiqing.\n\nTelefonni faqat xavfsiz joyga chiqqach ishlating: 104 — gaz avariya xizmatiga yoki 112 — yagona dispetcherlik xizmatiga qo‘ng‘iroq qiling. Bot operatorini kutmang.",
+        "ru": "Возможна утечка газа. Не зажигайте огонь и не курите. Не включайте и не выключайте свет и электроприборы.\n\nЕсли это возможно, перекройте газовый кран. Если это безопасно, откройте двери и окна. Покиньте опасную зону.\n\nПользуйтесь телефоном только после выхода в безопасное место: позвоните 104 — в аварийную газовую службу или 112 — в единую диспетчерскую службу. Не ждите оператора бота."
+      },
+      "document_ids": [
+        "gas_issues"
+      ],
+      "source_ids": [
+        "gas_advice"
+      ]
+    },
+    {
+      "id": "electrical_wire",
+      "question": {
+        "uz": "⚠️ B — Ochiq yoki uzilgan sim",
+        "ru": "⚠️ B — Оголённый или оборванный провод"
+      },
+      "answer": {
+        "uz": "Ochiq yoki uzilib tushgan simga yaqinlashmang va tegmang. Elektr tarmog‘idagi shikastlanish haqida 1154 orqali xabar bering.\n\nOdamga tok urgan, yong‘in boshlangan yoki hayotga bevosita xavf tug‘ilgan bo‘lsa, xavfsiz joydan 112’ga darhol qo‘ng‘iroq qiling. Bunday holatda 1154 bilan bog‘lanish shoshilinch yordam chaqiruvini kechiktirmasligi kerak. Bot operatorini kutmang.",
+        "ru": "Не приближайтесь к оголённому или оборванному проводу и не трогайте его. О повреждении электрической сети сообщите по номеру 1154.\n\nЕсли человека ударило током, начался пожар или возникла непосредственная угроза жизни, немедленно звоните 112 из безопасного места. В такой ситуации обращение по номеру 1154 не должно задерживать вызов экстренной помощи. Не ждите оператора бота."
+      },
+      "document_ids": [
+        "electricity_issues"
+      ],
+      "source_ids": [
+        "energy_safety",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "fire",
+      "question": {
+        "uz": "⚠️ C — Yong‘in",
+        "ru": "⚠️ C — Пожар"
+      },
+      "answer": {
+        "uz": "Yong‘in bo‘lsa, xavfsiz chiqish yo‘li orqali xavfli hududni tark eting. O‘zingizni xavfga qo‘ymasdan bajara olsangiz, boshqalarni ham ogohlantiring.\n\nXavfsiz joydan 101 — yong‘in-qutqaruv xizmatiga yoki 112 — yagona dispetcherlik xizmatiga qo‘ng‘iroq qiling. Hodisa manzili va nima yonayotganini ayting. Bot yoki operator yordam chaqirishini kutmang.",
+        "ru": "При пожаре покиньте опасную зону по безопасному пути выхода. Если можете сделать это, не подвергая себя опасности, предупредите других.\n\nИз безопасного места позвоните 101 — в пожарно-спасательную службу или 112 — в единую диспетчерскую службу. Сообщите адрес происшествия и что горит. Не ждите, что бот или оператор вызовет помощь."
+      },
+      "document_ids": [
+        "fire_safety"
+      ],
+      "source_ids": [
+        "fire_rules",
+        "emergency_112"
+      ]
+    },
+    {
+      "id": "water_electric",
+      "question": {
+        "uz": "⚠️ D — Suv va elektr xavfi",
+        "ru": "⚠️ D — Вода и электрическая опасность"
+      },
+      "answer": {
+        "uz": "Suv elektr jihozlari yoki simlarga yetgan bo‘lsa, suv ichiga kirib ularga tegmang. Elektrni o‘chirish uchun suvga kirmang va suv ichida turib elektr kalitlarini boshqarmang. Elektr ta’minotini xavfsiz uzishni malakali mutaxassisga qoldiring.\n\nOdamlarga bevosita xavf tug‘ilgan bo‘lsa, xavfsiz joydan 112’ga qo‘ng‘iroq qiling. Bot operatorini kutmang.",
+        "ru": "Если вода достигла электрооборудования или проводов, не заходите в воду и не трогайте их. Не входите в воду, чтобы отключить электричество, и не управляйте выключателями, стоя в воде. Безопасное отключение электроснабжения поручите квалифицированному специалисту.\n\nПри непосредственной угрозе людям звоните 112 из безопасного места. Не ждите оператора бота."
+      },
+      "document_ids": [
+        "water_issues"
+      ],
+      "source_ids": [
+        "cdc_electric",
+        "emergency_112"
+      ]
+    }
+  ],
+  "limitations": {
+    "uz": "Men DEMO yordamchiman. Haqiqiy hisoblar, qarzdorlik, to‘lovlar, kommunal tarmoqlar va dispetcherlik tizimlariga ulanmaganman. Nosozlikni masofadan tasdiqlay olmayman, brigada yubora olmayman yoki sizning o‘rningizga favqulodda xizmatga qo‘ng‘iroq qilmayman. Hozir botdagi operator xizmati ham ulanmagan.",
+    "ru": "Я демонстрационный помощник. У меня нет доступа к реальным счетам, задолженности, платежам, коммунальным сетям и диспетчерским системам. Я не могу дистанционно подтвердить неисправность, направить бригаду или позвонить в экстренную службу вместо вас. Операторская служба в этом боте пока также не подключена."
+  },
+  "safety_menu_label": {
+    "uz": "⚠️ Xavfsizlik yo‘riqnomalari",
+    "ru": "⚠️ Инструкции по безопасности"
+  },
+  "home_label": {
+    "uz": "↩️ Asosiy menyu",
+    "ru": "↩️ Главное меню"
+  },
+  "safety_intro": {
+    "uz": "Xavf turini tanlang. Bu tugmalar tayyor xavfsizlik yo‘riqnomalarini ochadi. Favqulodda holatda bot operatorini kutmang.",
+    "ru": "Выберите вид опасности. Эти кнопки открывают готовые инструкции по безопасности. В экстренной ситуации не ждите оператора бота."
+  },
+  "numbers": [
+    {
+      "number": "101",
+      "purpose": {
+        "uz": "Yong‘in-qutqaruv xizmati",
+        "ru": "Пожарно-спасательная служба"
+      },
+      "source_ids": [
+        "fire_rules"
+      ]
+    },
+    {
+      "number": "112",
+      "purpose": {
+        "uz": "Shoshilinch yordam uchun yagona dispetcherlik xizmati",
+        "ru": "Единая диспетчерская служба экстренной помощи"
+      },
+      "source_ids": [
+        "emergency_112"
+      ]
+    },
+    {
+      "number": "104",
+      "purpose": {
+        "uz": "Gaz avariya xizmati",
+        "ru": "Аварийная газовая служба"
+      },
+      "source_ids": [
+        "gas_advice"
+      ]
+    },
+    {
+      "number": "1154",
+      "purpose": {
+        "uz": "Faqat elektr tarmoqlari bo‘yicha HET aloqa markazi",
+        "ru": "Контактный центр РЭС только по вопросам электрических сетей"
+      },
+      "source_ids": [
+        "het_contact"
+      ]
+    }
+  ]
+}

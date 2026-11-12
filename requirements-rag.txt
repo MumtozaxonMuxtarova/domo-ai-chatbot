@@ -1,0 +1,6 @@
+# Optional local retrieval dependencies; base Telegram requirements remain unchanged.
+-c requirements.txt
+sentence-transformers==6.3.0
+chromadb==1.5.9
+# Install CPU PyTorch first using https://download.pytorch.org/whl/cpu.
+torch==2.15.0+cpu
