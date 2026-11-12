@@ -8,6 +8,7 @@ from aiogram.methods import SendMessage
 from app.bot.keyboards import main_menu
 from app.bot.texts import TEXTS, Language
 from app.llm.service import AnswerResult, Reference, SAFE_FALLBACK
+from app.llm.service import DEMO_PREFIX
 from app.rag.chunking import build_chunks
 
 
@@ -274,3 +275,17 @@ async def test_invalid_sources_or_oversize_result_never_leak_to_telegram(harness
     assert "private-file-path" not in harness.last.text
     assert "untrusted.example" not in harness.last.text
     assert harness.last.parse_mode is None
+
+
+@pytest.mark.parametrize("language,text", [
+    (Language.UZ, "Chekni saqlang va to‘lov xizmatidan operatsiya holatini tekshiring."),
+    (Language.RU, "Сохраните чек и проверьте статус операции в платёжном сервисе."),
+])
+async def test_natural_answer_does_not_display_internal_demo_heading(harness, language, text):
+    await choose_language(harness, language)
+    harness.dispatcher["rag_service"] = FakeRagService(answered(
+        language, DEMO_PREFIX[language] + "\n\n" + text,
+    ))
+    await harness.send("To‘lov haqida savolim bor" if language == Language.UZ else "У меня вопрос об оплате")
+    assert harness.last.text == text
+    assert DEMO_PREFIX[language] not in harness.last.text

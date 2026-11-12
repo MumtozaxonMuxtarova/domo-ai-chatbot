@@ -115,7 +115,7 @@ async def is_menu_text(message: Message, faq_catalog: KnowledgeCatalog) -> bool:
 
 
 def _ai_text(result: AnswerResult, language: Language, catalog: KnowledgeCatalog) -> str:
-    from app.llm.service import SAFE_FALLBACK
+    from app.llm.service import DEMO_PREFIX, SAFE_FALLBACK
 
     if result.language != language or result.status == "error":
         return TEXTS[language].error
@@ -140,10 +140,11 @@ def _ai_text(result: AnswerResult, language: Language, catalog: KnowledgeCatalog
                 sources.append(f"{source.title.text(language)}\n{source.url}")
                 seen.add(source_id)
     heading = "Manbalar:" if language == Language.UZ else "Источники:"
-    text = result.text + ("\n\n" + heading + "\n" + "\n".join(sources) if sources else "")
+    answer = result.text.removeprefix(DEMO_PREFIX[language] + "\n\n")
+    text = answer + ("\n\n" + heading + "\n" + "\n".join(sources) if sources else "")
     if len(text.encode("utf-16-le")) // 2 > 4096:
         # Omit optional source decoration, never truncate approved guidance.
-        text = result.text
+        text = answer
     return text if len(text.encode("utf-16-le")) // 2 <= 4096 else SAFE_FALLBACK[language]
 
 

@@ -5,15 +5,19 @@ handlerlar va retrieval kodi o‘zgartirilmagan. Operator tizimi qo‘shilmadi.
 
 ## Oqim va javob shakli
 
-`RagAnswerService.answer()` → mavjud `Retriever.search()` → kerakli tildagi
-ko‘pi bilan 3 bo‘lak → `GroundedLLMService` → `GroqClient` → tekshirilgan javob.
+`RagAnswerService.answer()` → mavjud `Retriever.search()` → lokal 20 tagacha
+nomzoddan tasdiqlangan eng mos 3 bo‘lak → `GroundedLLMService` → `GroqClient`
+→ tekshirilgan javob. Ichki yo‘riqnoma qidiruvning yuqori o‘rnida bo‘lsa ham,
+undan pastdagi tasdiqlangan foydalanuvchi javobi tanlanishi mumkin.
 Retrieval alohida oqimda bajariladi; mavjud asyncio ishini band qilmaydi.
 
-Boshlang‘ich variant **extractive**: model javobni erkin qayta yozmaydi. U savolga
-bevosita javob beradigan bo‘laklarning to‘liq matnini va IDlarini tanlaydi.
-Model qaytargan matn aynan shu kontekstdagi to‘liq matnga teng bo‘lishi shart.
-Shu sabab xavfsizlik shartlari, cheklovlar va telefon raqamlarini qisqartirib
-chiqarish yoki modeldan yangi maslahat qo‘shish qabul qilinmaydi.
+Oddiy kommunal savollarda model tasdiqlangan ma’lumotni tabiiy, qisqa javobga
+aylantiradi va dalil sifatida shu so‘rovdagi hujjat bo‘laklarining IDlarini
+ko‘rsatadi. Butun kontekstni qayta ko‘chirish talab qilinmaydi. Noma’lum,
+ichki yoki shu so‘rovda yuborilmagan bo‘lak IDsi rad etiladi. Eski ichki mijoz
+iqtibos ham yuborsa, u asl matnga aynan teng bo‘lishi shart.
+Xavfsizlik javoblari modeldan olinmaydi: ID orqali serverdagi to‘liq
+tasdiqlangan matn qaytariladi.
 
 - Faqat mavjud katalogdan qayta hisoblangan, barcha maydonlari mos bo‘laklar
   qabul qilinadi. Boshqa matn/ID/manba biriktirilgan `RetrievalHit` rad etiladi.
@@ -28,17 +32,24 @@ chiqarish yoki modeldan yangi maslahat qo‘shish qabul qilinmaydi.
   yoki boshqa yozuvdagi savol uchun `language`ni aniq berish ma’qul. Bu to‘liq
   til aniqlash modeli emas.
 - Standart cosine chegarasi `0.80`; bu javob to‘g‘riligi ehtimolligi emas.
-- Bo‘sh, noto‘g‘ri, aralash tilli, takroriy, past balli kontekst chaqiruvsiz
-  zaxira javobga tushadi. Faqat aniqlashtirilmagan ma’lumotlar bo‘limi topilsa
-  ham API chaqirilmaydi.
-- Model `answerable=false` desa yoki JSON/ID/til/to‘liq matn tekshiruvi
-  o‘tmasa, `SAFE_FALLBACK[language]` qaytariladi. Noma’lum tarif, balans yoki
-  muddat to‘qib chiqarilmaydi.
+- Noto‘g‘ri, aralash tilli, takroriy, past balli yoki almashtirilgan kontekst
+  chaqiruvsiz zaxira javobga tushadi. Ichki batafsil yo‘riqnomalar modelga
+  yuborilmaydi; faqat tasdiqlangan mijoz javoblariga mos bo‘laklar beriladi.
+- Bo‘sh qidiruvda ham model savol turini aniqlashi mumkin. Salomlashish,
+  minnatdorchilik, aniqlashtirish, haqiqiy hisobga kira olmaslik va mavzudan
+  tashqari savollar uchun serverdagi qisqa ikki tilli javoblar ishlatiladi.
+  Bunday holatda modelning erkin matni chiqarilmaydi va manba biriktirilmaydi.
+- Javob sxemasi: `mode`, `language`, `answer`, `clarification`, `evidence`.
+  `grounded` rejimida dalil majburiy; boshqa rejimlarda dalil bo‘sh bo‘lishi shart.
+  JSON/ID/til tekshiruvi o‘tmasa, `SAFE_FALLBACK[language]` qaytariladi.
+  Model bergan URL, texnik ko‘rsatma, yangi raqam va hisob holati haqidagi
+  aniqlangan asossiz da’volar ham rad etiladi.
 - `AnswerResult`: `text`, `language`, `status`, `reason`, `references`,
   `retry_after`. `references` ichida `chunk_id`, `document_id`, `filename`,
   `source_ids`, `source_urls` bor. Havolalar modeldan olinmaydi; mahalliy
   katalogdan tiklanadi. Manbasiz umumiy DEMO yo‘riqnomasiga begona rasmiy
-  xavfsizlik havolasi qo‘shilmaydi. Har javobda DEMO belgisi saqlanadi.
+  xavfsizlik havolasi qo‘shilmaydi. Telegram oddiy javobdagi takroriy DEMO
+  sarlavhasini olib tashlaydi; botning demo cheklovlari salomlashuvda qoladi.
 
 ## Konfiguratsiya
 
@@ -58,7 +69,7 @@ Mavjud `.gitignore` `.env` va `.env.*`ni allaqachon chiqarib tashlaydi;
 `openai/gpt-oss-20b` Groq’ning strict JSON Schema rejimini qo‘llab-quvvatlaydi.
 Modelni o‘zgartirganda shu imkoniyatni tekshiring: [Groq structured outputs](https://console.groq.com/docs/structured-outputs).
 Mos kelmaydigan modelda API xatosi qaytariladi; erkin matn rejimiga yashirin o‘tish yo‘q.
-Model mavjudligi jonli API bilan hali tekshirilmagan.
+Model bilan jonli so‘rovlar ushbu muhitda muvaffaqiyatli tekshirilgan.
 
 `httpx==0.28.1` ushbu virtual muhitda allaqachon bor; hech qanday yangi paket
 o‘rnatilmadi. Yangi muhit uchun alohida `requirements-llm.txt` berilgan.
@@ -119,18 +130,21 @@ async def approved_live_question(question, language):
   sifatida user xabariga joylanadi; ular yangi system xabari yarata olmaydi.
 - Tanish inglizcha/o‘zbekcha/ruscha buyruq almashtirish va kalit chiqarish
   urinishlari konservativ filtr bilan rad etiladi. Modelga tools berilmaydi.
-- Modeldan kelgan erkin matn, noma’lum ID yoki o‘zgartirilgan iqtibos hech qachon
-  yakuniy javob sifatida ko‘rsatilmaydi.
+- Noma’lum ID yoki berilgan eski dalil iqtibosining o‘zgarishi rad etiladi. Oddiy javob
+  dalilga tayangan tabiiy matn bo‘lishi mumkin; xavfsizlik matni aynan saqlanadi.
 
 Bu choralar barcha semantik prompt injectionlarni aniqlash kafolati emas.
-Model noto‘g‘ri bo‘lakni tanlashi mumkin; to‘liq iqtibos tekshiruvi uning
-savolga mantiqiy mosligini matematik isbotlamaydi. Yangi hujumlar va haqiqiy
-model bilan javob sifati alohida sinov talab qiladi. Hozir Telegram yo‘li ulanmagan.
+Model noto‘g‘ri bo‘lakni tanlashi yoki noto‘g‘ri mazmun berishi mumkin. Manba
+IDsi va raqam/til tekshiruvlari tabiiy javobning har bir jumlasi manbaga
+mazmunan mosligini isbotlamaydi. Shuning uchun mutlaq to‘qimaslik kafolati
+berilmaydi; haqiqiy model bilan alohida sifat sinovi kerak. Telegram yo‘li
+`app/bot/ai.py` orqali ulangan, ammo kod o‘zgargach botni qayta ishga tushirish kerak.
 
 ## Testlar va keyingi ish
 
 Yangi testlar: `test_llm_settings.py`, `test_llm_transport.py`,
-`test_llm_service.py`, `test_llm_pipeline.py`, `test_llm_security.py`.
+`test_llm_service.py`, `test_llm_pipeline.py`, `test_llm_security.py`,
+`test_llm_conversation.py`.
 Ular ikki tilni, javobi bor/yo‘q kontekstni, haqiqiy lokal Chroma’dan soxta Groq’gacha
 oqimni, ID/manbalarni, prompt hujumlarini, HTTP xatolarini va vaqt chegarasini tekshiradi.
 Embeddinglar testda sun’iy; bu sinovlar haqiqiy LLM yoki embedding sifatini baholamaydi.
@@ -139,12 +153,14 @@ Embeddinglar testda sun’iy; bu sinovlar haqiqiy LLM yoki embedding sifatini ba
 .\.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
 ```
 
-Yakuniy tekshiruv: **225 passed, 0 failed** — avvalgi 141 ta va yangi 84 ta test.
-Oldindan mavjud 44 ta `app/` va `knowledge_base/` faylining SHA-256 izlari
-solishtirildi: o‘zgarish yo‘q. Haqiqiy API chaqirilmadi, yangi paket o‘rnatilmadi,
-bot qayta ishga tushirilmadi, commit yoki push bajarilmadi.
-
-Telegram uchun hali alohida tasdiqdan keyin: haqiqiy Groq bilan kichik ikki tilli
-sinov; free-text handlerga ulash; foydalanuvchi tilini uzatish; manbalarni ko‘rsatish;
-tezlik/parallel so‘rov cheklovlari va mijozni yopish; favqulodda holatlarda mavjud
-tasdiqlangan xavfsizlik javoblari yo‘lini saqlash. Operator tizimi bu vazifaga kirmaydi.
+Tabiiy suhbat o‘zgarishidan keyingi mahalliy tekshiruv: **379 passed, 0 failed**.
+Testlar API uchun soxta mijozdan foydalanadi. Yangi paket o‘rnatilmadi; FAQ,
+KB manbalari va RAG arxitekturasi saqlandi. Foydalanuvchi ruxsatidan keyin
+salomlashish, aniqlashtirish, ikki tildagi to‘lov yo‘riqnomasi, haqiqiy hisob
+cheklovi va mavzudan tashqari savol jonli tekshirildi. Dastlab bir so‘rovda
+429 limit kuzatildi; keyingi qayta tekshiruvlar muvaffaqiyatli o‘tdi. Dalil
+matnini ortiqcha ko‘chirish talabi IDga almashtirildi. Haqiqiy hisob summasini
+so‘rashning aniq holatlari endi API chaqirmasdan halol cheklovga yo‘naltiriladi.
+Bot yangi kod bilan qayta ishga tushirildi va `AI_ready=True` tasdiqlandi.
+Operator tizimi bu vazifaga kirmaydi. Yangi kodni commit/push qilish avtomatik
+bajarilmaydi.

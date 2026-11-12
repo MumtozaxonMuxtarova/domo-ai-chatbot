@@ -48,8 +48,10 @@ def body(chunk):
 
 def decision(chunk, *, language=None, answerable=True):
     return json.dumps({
-        "answerable": answerable,
+        "mode": "grounded" if answerable else "insufficient_context",
         "language": language or chunk.language,
+        "answer": body(chunk) if answerable else "",
+        "clarification": "none",
         "evidence": [{"chunk_id": chunk.id, "quote": body(chunk)}] if answerable else [],
     }, ensure_ascii=False)
 
@@ -100,7 +102,7 @@ async def test_model_declaring_answer_absent_returns_fixed_language_fallback(kno
     "empty", "malformed", "forged_id", "forged_text", "forged_provenance",
     "mixed_language", "low_score", "nonfinite_score", "too_many", "duplicate",
 ])
-async def test_invalid_context_is_rejected_before_calling_client(knowledge, variant):
+async def test_invalid_context_cannot_produce_a_grounded_answer(knowledge, variant):
     catalog, chunks = knowledge
     chunk = pick(chunks, "utility_payments", "uz")
     valid = RetrievalHit(chunk, 0.95)
@@ -127,7 +129,9 @@ async def test_invalid_context_is_rejected_before_calling_client(knowledge, vari
             "To‘lovni qanday amalga oshiraman?", hits, language="uz"
         )
         assert_fallback(result, "uz")
-        assert client.calls == []
+        # A legitimate empty retrieval now allows dialogue classification, but
+        # cannot authorize a grounded answer citing a missing context entry.
+        assert len(client.calls) == (1 if variant == "empty" else 0)
 
 
 @pytest.mark.parametrize("language,section", [
@@ -143,7 +147,8 @@ async def test_unknown_information_sections_are_not_used_as_answer_evidence(know
         [RetrievalHit(chunk, 0.95)], language=language,
     )
     assert_fallback(result, language)
-    assert client.calls == []
+    assert len(client.calls) == 1
+    assert json.loads(client.calls[0][1]["content"])["context"] == []
 
 
 @pytest.mark.parametrize("variant", [
@@ -159,7 +164,7 @@ async def test_untrusted_model_decisions_cannot_add_or_shorten_safety_instructio
     else:
         evidence = payload["evidence"][0]
         if variant == "extra_field":
-            payload["answer"] = "Your real account balance is 123456."
+            payload["unexpected"] = "Your real account balance is 123456."
         elif variant == "wrong_language":
             payload["language"] = "ru"
         elif variant == "wrong_citation":

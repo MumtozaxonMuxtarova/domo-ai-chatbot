@@ -53,8 +53,10 @@ class SelectingClient:
         if self.response is not None:
             return json.dumps(self.response, ensure_ascii=False)
         return json.dumps({
-            "answerable": bool(envelope["context"]),
+            "mode": "grounded" if envelope["context"] else "insufficient_context",
             "language": envelope["language"],
+            "answer": "\n\n".join(chunk["body"] for chunk in envelope["context"]),
+            "clarification": "none",
             "evidence": [
                 {"chunk_id": chunk["chunk_id"], "quote": chunk["body"]}
                 for chunk in envelope["context"]
@@ -123,7 +125,7 @@ async def test_live_debt_hit_order_exposes_only_approved_customer_answer(knowled
 
 
 @pytest.mark.parametrize("language", ["uz", "ru"])
-async def test_detailed_only_hits_fallback_without_calling_model(knowledge, language):
+async def test_detailed_only_hits_never_expose_internal_context_to_model(knowledge, language):
     catalog, chunks = knowledge
     detailed, _, _ = debt_chunks(chunks, language)
     client = SelectingClient()
@@ -131,7 +133,8 @@ async def test_detailed_only_hits_fallback_without_calling_model(knowledge, lang
         debt_question(language), [RetrievalHit(detailed, 0.95)], language=language
     )
     assert_safe_fallback(result, language)
-    assert client.envelopes == []
+    assert len(client.envelopes) == 1
+    assert client.envelopes[0]["context"] == []
 
 
 @pytest.mark.parametrize("language", ["uz", "ru"])
@@ -139,7 +142,7 @@ async def test_old_model_payload_with_internal_and_public_quotes_is_rejected_ent
     catalog, chunks = knowledge
     detailed, short, _ = debt_chunks(chunks, language)
     client = SelectingClient(response={
-        "answerable": True, "language": language,
+        "mode": "grounded", "language": language, "answer": body(short), "clarification": "none",
         "evidence": [
             {"chunk_id": detailed.id, "quote": body(detailed)},
             {"chunk_id": short.id, "quote": body(short)},
@@ -159,7 +162,7 @@ async def test_internal_prose_cannot_be_cited_under_public_short_answer_id(knowl
     catalog, chunks = knowledge
     detailed, short, _ = debt_chunks(chunks, language)
     client = SelectingClient(response={
-        "answerable": True, "language": language,
+        "mode": "grounded", "language": language, "answer": body(detailed), "clarification": "none",
         "evidence": [{"chunk_id": short.id, "quote": "TECHNICAL_SYSTEM_ONLY\n" + body(detailed)}],
     })
     result = await GroundedLLMService(client, catalog).answer(
@@ -215,4 +218,5 @@ async def test_new_or_contaminated_heading_is_fail_closed_with_catalog_changes_o
             debt_question(language), [RetrievalHit(chunk, 0.95)], language=language
         )
         assert_safe_fallback(result, language)
-        assert client.envelopes == []
+        assert len(client.envelopes) == 1
+        assert client.envelopes[0]["context"] == []

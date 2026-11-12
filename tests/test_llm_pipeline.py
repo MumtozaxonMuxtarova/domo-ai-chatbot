@@ -54,7 +54,8 @@ async def test_existing_chroma_retrieval_reaches_groq_context_and_returns_canoni
         assert len(data["context"]) == 1
         selected = data["context"][0]
         assert selected["language"] == language
-        content = json.dumps({"answerable": True, "language": language, "evidence": [
+        content = json.dumps({"mode": "grounded", "language": language,
+                              "answer": selected["body"], "clarification": "none", "evidence": [
             {"chunk_id": selected["chunk_id"], "quote": selected["body"]},
         ]})
         return httpx.Response(200, json={"choices": [{
@@ -168,7 +169,8 @@ async def test_service_uses_same_token_budget_chunking_as_existing_retriever():
 
     class EvidenceClient:
         async def complete(self, messages):
-            return json.dumps({"answerable": True, "language": "uz", "evidence": [
+            return json.dumps({"mode": "grounded", "language": "uz",
+                               "answer": chunk.text.split("\n\n", 1)[1], "clarification": "none", "evidence": [
                 {"chunk_id": chunk.id, "quote": chunk.text.split("\n\n", 1)[1]},
             ]})
 
@@ -177,3 +179,56 @@ async def test_service_uses_same_token_budget_chunking_as_existing_retriever():
     ).answer("Savol", [RetrievalHit(chunk, 0.95)])
     assert result.status == "answered"
     assert result.references[0].chunk_id == chunk.id
+
+
+@pytest.mark.parametrize("language", ["uz", "ru"])
+async def test_internal_top_results_do_not_hide_a_lower_ranked_approved_answer(language):
+    catalog = load_catalog()
+    chunks = build_chunks(catalog)
+    internal = [chunk for chunk in chunks if chunk.language == language
+                and chunk.section in ("Batafsil yo‘riqnoma", "Подробная инструкция")][:3]
+    public = next(chunk for chunk in chunks if chunk.document_id == "utility_payments"
+                  and chunk.language == language
+                  and chunk.section in ("Tasdiqlangan qisqa javob", "Утверждённый краткий ответ"))
+    requests = []
+
+    class RankedRetriever:
+        def search(self, question, **kwargs):
+            assert kwargs["top_k"] == 20
+            return [RetrievalHit(chunk, 0.95) for chunk in [*internal, public]]
+
+    class EvidenceClient:
+        async def complete(self, messages):
+            envelope = json.loads(messages[1]["content"])
+            requests.append(envelope)
+            assert [item["chunk_id"] for item in envelope["context"]] == [public.id]
+            return json.dumps({"mode": "grounded", "language": language,
+                               "answer": public.text.split("\n\n", 1)[1], "clarification": "none",
+                               "evidence": [{"chunk_id": public.id, "quote": public.text.split("\n\n", 1)[1]}]})
+
+    result = await RagAnswerService(
+        RankedRetriever(), GroundedLLMService(EvidenceClient(), catalog),
+    ).answer("To‘lovdan oldin nimani tekshiraman?" if language == "uz" else "Что проверить перед оплатой?", language=language)
+    assert result.status == "answered"
+    assert len(requests) == 1
+    assert result.references[0].document_id == "utility_payments"
+
+
+@pytest.mark.parametrize("language,question", [
+    ("uz", "Mening elektr bo‘yicha qarzim hozir qancha?"),
+    ("ru", "Какой у меня баланс?"),
+])
+async def test_personal_account_amount_does_not_spend_retrieval_or_api_quota(language, question):
+    class NoCall:
+        def search(self, *args, **kwargs):
+            raise AssertionError("No account lookup or retrieval is available")
+
+        async def complete(self, messages):
+            raise AssertionError("A known capability limit does not need an API call")
+
+    result = await RagAnswerService(NoCall(), GroundedLLMService(NoCall(), load_catalog())).answer(
+        question, language=language,
+    )
+    assert result.status == "answered"
+    assert result.reason == "account_unavailable"
+    assert result.references == ()

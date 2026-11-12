@@ -1,4 +1,4 @@
-"""Grounded, extractive answers over the existing bilingual retrieval results."""
+"""Natural grounded answers, bounded dialogue modes and original safety guidance."""
 
 import asyncio
 import json
@@ -19,16 +19,50 @@ from app.rag.errors import RetrievalError
 from app.rag.retrieval import RetrievalHit, Retriever
 
 SAFE_FALLBACK = {
-    "uz": "Bilim bazasida bu savolga tasdiqlangan javob yetarli emas. Taxmin qilmayman. "
-          "Savolni aniqlashtiring yoki xizmat ko‘rsatuvchining rasmiy yordamiga murojaat qiling. "
-          "Bot haqiqiy hisoblar va to‘lovlarni tekshira olmaydi.",
-    "ru": "В базе знаний недостаточно подтверждённых данных для ответа на этот вопрос. "
-          "Я не буду делать предположения. Уточните вопрос или обратитесь в официальную "
-          "поддержку поставщика услуги. Бот не может проверять реальные счета и платежи.",
+    "uz": "Bu bo‘yicha tasdiqlangan ma’lumotim yo‘q. Aniq javobni xizmat ko‘rsatuvchingizning rasmiy yordamidan olish kerak.",
+    "ru": "У меня нет подтверждённых данных по этому вопросу. Уточните их в официальной поддержке поставщика услуги.",
 }
 DEMO_PREFIX = {
     "uz": "DEMO — bilim bazasidagi umumiy yo‘riqnoma:",
     "ru": "DEMO — общая инструкция из базы знаний:",
+}
+
+CONVERSATION_TEXT = {
+    "greeting": {
+        "uz": "Assalomu alaykum! Elektr, gaz, suv yoki isitish bo‘yicha qanday yordam kerak?",
+        "ru": "Здравствуйте! Чем помочь по вопросам электричества, газа, воды или отопления?",
+    },
+    "thanks": {
+        "uz": "Arzimaydi! Yana biror kommunal masala bo‘yicha yordam kerakmi?",
+        "ru": "Пожалуйста! Могу ещё помочь с каким-нибудь коммунальным вопросом?",
+    },
+    "account_unavailable": {
+        "uz": "Men hisobingizni yoki to‘lov holatini ko‘ra olmayman. Buni xizmat ko‘rsatuvchingizning rasmiy kanali orqali tekshiring.",
+        "ru": "Я не могу проверить ваш счёт или статус платежа. Проверьте это через официальный канал поставщика услуги.",
+    },
+    "out_of_scope": {
+        "uz": "Men elektr, gaz, suv va isitish masalalarida yordam beraman. Shu xizmatlardan biri bo‘yicha savolingiz bormi?",
+        "ru": "Я помогаю с вопросами электричества, газа, воды и отопления. Есть вопрос по одной из этих услуг?",
+    },
+    "insufficient_context": SAFE_FALLBACK,
+}
+CLARIFICATION_TEXT = {
+    "service": {
+        "uz": "Qaysi xizmatda muammo bor: elektr, gaz, suv yoki isitish?",
+        "ru": "С какой услугой возникла проблема: электричеством, газом, водой или отоплением?",
+    },
+    "supplier": {
+        "uz": "Qaysi kommunal xizmat va qaysi ta’minotchi haqida so‘rayapsiz?",
+        "ru": "О какой коммунальной услуге и каком поставщике идёт речь?",
+    },
+    "problem": {
+        "uz": "Nima bo‘ldi? Qaysi xizmatda muammo borligini qisqacha yozing.",
+        "ru": "Что случилось? Кратко опишите проблему и укажите услугу.",
+    },
+    "payment": {
+        "uz": "Pul kartadan yechildimi yoki to‘lov umuman amalga oshmadimi?",
+        "ru": "Деньги списались с карты или платёж вообще не прошёл?",
+    },
 }
 
 
@@ -58,13 +92,17 @@ class CompletionClient(Protocol):
 class _Evidence(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     chunk_id: Annotated[str, Field(min_length=1, max_length=128)]
-    quote: Annotated[str, Field(min_length=1, max_length=900)]
+    # Older internal clients may still send a quote. If supplied, validate it;
+    # the Groq schema itself now asks only for IDs to avoid brittle recopying.
+    quote: Annotated[str, Field(min_length=1, max_length=900)] | None = None
 
 
 class _Decision(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    answerable: bool
+    mode: Literal["grounded", "greeting", "thanks", "clarify", "account_unavailable", "insufficient_context", "out_of_scope"]
     language: Literal["uz", "ru"]
+    answer: Annotated[str, Field(max_length=1200)]
+    clarification: Literal["none", "service", "supplier", "problem", "payment"]
     evidence: Annotated[list[_Evidence], Field(max_length=3)]
 
 
@@ -117,6 +155,70 @@ def _unique_json_pairs(pairs):
     return result
 
 
+def _personal_amount_question(question: str) -> bool:
+    """Known hard limit: no real account access, regardless of model wording."""
+    text = question.casefold().replace("ё", "е").translate(str.maketrans({"‘": "'", "’": "'", "ʻ": "'", "ʼ": "'"}))
+    if re.search(r"\b(?:qanday|qayer\w*|как|где)\b", text):
+        return False  # General instructions on HOW to check remain answerable.
+    uz_personal = re.search(r"\b(?:qarzim|qarzdorligim|balansim|hisobimda\w*|qoldig'im)\b", text)
+    if uz_personal and re.search(r"\b(?:qancha|necha|miqdor\w*)\b", text):
+        return True
+    ru_personal = re.search(r"\b(?:мой|моя|моем|моей|мою|у\s+меня|я\s+должен)\b", text)
+    return bool(ru_personal and re.search(r"\b(?:сколько|каков\w*|какой|сумм\w*)\b", text)
+                and re.search(r"\b(?:баланс\w*|долг\w*|задолжен\w*|счет\w*|денег|должен)\b", text))
+
+
+def _natural_answer_allowed(answer: str, chunks: list[Chunk], language: str) -> bool:
+    """Reject concrete unsafe additions; these checks do not prove entailment."""
+    if (not answer.strip() or suspicious_instruction(answer)
+            or re.search(r"https?://|www\.|```|<[^>]+>|[\x00-\x08\x0b\x0c\x0e-\x1f]", answer)
+            or re.search(
+                r"chunk_id|document_id|json_schema|response_format|TECHNICAL_SYSTEM_ONLY|"
+                r"\b(?:system|developer)\s*(?:prompt|message|instructions?)|"
+                r"системн\w*\s+(?:промпт|инструкц)|ichki\s+(?:prompt|ko‘rsatma|ko'rsatma)|"
+                r"Показывайте\s+только|Faqat\s+mavjud\s+tasdiqlangan\s+tekshirish|"
+                r"\b(?:groq|embedding|sentence.?transformers)\b", answer, re.I)):
+        return False
+    normalized = answer.casefold().translate(str.maketrans({"‘": "'", "’": "'", "ʻ": "'", "ʼ": "'"}))
+    if re.search(
+        r"\b(?:balansingiz|qarzingiz|qarzdorligingiz|qoldig'ingiz)\s+(?:\d|nol|yo'q|bor\b|to'langan|yopilgan)|"
+        r"\bsizda\s+qarz\s+(?:yo'q|bor)|"
+        r"\bto'lovingiz\s+(?:tasdiqlandi|o'tdi|tushdi|qabul\s+qilindi)|"
+        r"\b(?:pul(?:ingiz)?|to'lov(?:ingiz)?)\s+(?:albatta\s+)?qaytariladi|"
+        r"\bваш[ае]?\s+(?:баланс|долг|задолженность|остаток)\w*\s+(?:\d|составля|рав|нул|погаш)|"
+        r"\bу\s+вас\s+(?:нет|есть|отсутствует)\s+(?:долг|задолжен)|"
+        r"\bваш\s+плат[её]ж\s+(?:зачислен|подтвержден|поступил)|"
+        r"\bденьги\s+(?:вам\s+)?(?:обязательно\s+)?вернут", normalized,
+    ):
+        return False
+    evidence_text = "\n".join(_body(chunk) for chunk in chunks)
+    if any(word in normalized and word not in evidence_text.casefold()
+           for word in ("ertaga", "bugun", "завтра", "сегодня")):
+        return False
+    if re.search(r"\bчерез\s+(?:несколько|один|два|две|три|четыре|пять)\s+(?:час|дн|ден|сут|недел)", normalized):
+        return False
+    for number in re.findall(r"\d+(?:[.,]\d+)?", answer):
+        # The only numeric ordinary guidance currently approved is HET contact
+        # 1154. Numeric account facts/tariffs cannot be inferred from a phone ID.
+        if (number != "1154" or not any("het_contact" in chunk.source_ids for chunk in chunks)
+                or not re.search(r"elektr|электр", answer, re.I)
+                or re.search(r"1154\s*(?:so'm|so‘m|сум|руб)|(?:balans|qarz|баланс|долг)\w*\W{0,8}1154", normalized)):
+            return False
+    cyrillic = len(re.findall(r"[а-яё]", answer, re.I))
+    latin = len(re.findall(r"[a-z]", answer, re.I))
+    if language == "ru":
+        return cyrillic >= 3 and cyrillic >= latin
+    # A Latin alphabet alone does not distinguish Uzbek from English. These
+    # lightweight utility-language markers reject obvious wrong-language output;
+    # they are not a general-purpose language detector.
+    words = re.findall(r"[a-z]+(?:'[a-z]+)*", normalized)
+    markers = ("elektr", "gaz", "suv", "isitish", "to'lov", "hisob", "qarz", "chek",
+               "ta'minot", "xizmat", "rasmiy", "murojaat", "tekshir", "saqla", "aniq",
+               "tashkilot", "kvitansiya", "uchun", "bilan", "kerak", "mumkin", "emas",
+               "bo'lsa", "qiling", "yordam", "bank", "qo'ng'iroq")
+    return latin >= 3 and cyrillic <= latin // 3 and sum(word.startswith(markers) for word in words) >= 2
+
+
 class GroundedLLMService:
     def __init__(
         self, client: CompletionClient, catalog: KnowledgeCatalog, *, min_score: float = 0.80,
@@ -147,7 +249,7 @@ class GroundedLLMService:
         return AnswerResult(SAFE_FALLBACK[language], language, status, reason, retry_after=retry_after)
 
     def _context(self, hits, language: str) -> list[Chunk] | None:
-        if not isinstance(hits, (list, tuple)) or not 1 <= len(hits) <= 3:
+        if not isinstance(hits, (list, tuple)) or not 0 <= len(hits) <= 3:
             return None
         chunks = []
         seen = set()
@@ -168,7 +270,7 @@ class GroundedLLMService:
             if chunk.id not in self._customer_ids:
                 continue
             chunks.append(chunk)
-        return chunks or None
+        return chunks
 
     async def answer(self, question: str, hits: list[RetrievalHit], *, language: str | None = None) -> AnswerResult:
         selected = select_language(question, language)
@@ -177,8 +279,11 @@ class GroundedLLMService:
         if suspicious_instruction(question):
             return self._fallback(selected, "unsafe_input")
         chunks = self._context(hits, selected)
-        if not chunks:
+        if chunks is None:
             return self._fallback(selected, "invalid_context")
+        if _personal_amount_question(question):
+            return AnswerResult(CONVERSATION_TEXT["account_unavailable"][selected], selected,
+                                "answered", "account_unavailable")
         context = [{
             "chunk_id": chunk.id, "document_id": chunk.document_id,
             "language": chunk.language, "title": chunk.title, "section": chunk.section,
@@ -195,30 +300,46 @@ class GroundedLLMService:
             decision = _Decision.model_validate(json.loads(raw, object_pairs_hook=_unique_json_pairs))
             if decision.language != selected:
                 raise ValueError
-            if not decision.answerable:
+            if decision.mode != "grounded":
                 if decision.evidence:
                     raise ValueError
-                return self._fallback(selected, "insufficient_context")
-            if not decision.evidence:
+                if decision.mode == "clarify":
+                    if decision.clarification == "none":
+                        raise ValueError
+                    text = CLARIFICATION_TEXT[decision.clarification][selected]
+                else:
+                    if decision.clarification != "none":
+                        raise ValueError
+                    text = CONVERSATION_TEXT[decision.mode][selected]
+                if decision.mode == "insufficient_context":
+                    return self._fallback(selected, "insufficient_context")
+                return AnswerResult(text, selected, "answered", decision.mode)
+            if not decision.evidence or decision.clarification != "none":
                 raise ValueError
             allowed = {chunk.id: chunk for chunk in chunks}
             seen = set()
-            quotes, references = [], []
+            quotes, references, cited = [], [], []
             for evidence in decision.evidence:
                 chunk = allowed.get(evidence.chunk_id)
                 if (chunk is None or chunk.id not in self._customer_ids or chunk.id in seen
-                        or evidence.quote != _body(chunk)
-                        or suspicious_instruction(evidence.quote)):
+                        or ("quote" in evidence.model_fields_set and evidence.quote != _body(chunk))):
                     raise ValueError
                 seen.add(chunk.id)
-                # Full bodies preserve conditions and emergency guidance; no model prose.
-                quotes.append(evidence.quote)
+                cited.append(chunk)
+                quotes.append(_body(chunk))
                 references.append(Reference(
                     chunk.id, chunk.document_id, chunk.filename, chunk.source_ids,
                     tuple(str(self.catalog.sources[key].url) for key in chunk.source_ids),
                 ))
+            is_safety = any(chunk.section.startswith(("Xavfsizlik javobi", "Ответ по безопасности")) for chunk in cited)
+            if is_safety:
+                text = "\n\n".join(quotes)
+            elif _natural_answer_allowed(decision.answer, cited, selected):
+                text = decision.answer.strip()
+            else:
+                raise ValueError
             return AnswerResult(
-                DEMO_PREFIX[selected] + "\n\n" + "\n\n".join(quotes), selected,
+                DEMO_PREFIX[selected] + "\n\n" + text, selected,
                 "answered", "grounded_evidence", tuple(references),
             )
         except (ValueError, TypeError, ValidationError, RecursionError):
@@ -235,13 +356,25 @@ class RagAnswerService:
     async def answer(self, question: str, *, language: str | None = None) -> AnswerResult:
         selected = select_language(question, language)
         if (not isinstance(question, str) or not question.strip() or len(question) > 2000
-                or suspicious_instruction(question)):
+                or suspicious_instruction(question) or _personal_amount_question(question)):
             return await self.llm.answer(question, [], language=selected)
         try:
-            hits = await asyncio.to_thread(
+            candidates = await asyncio.to_thread(
                 self.retriever.search, question, language=selected,
-                top_k=3, min_score=self.llm.min_score,
+                top_k=20, min_score=self.llm.min_score,
             )
         except (RetrievalError, ValueError):
             return self.llm._fallback(selected, "retrieval_error", status="error")
-        return await self.llm.answer(question, hits, language=selected)
+        if not isinstance(candidates, (list, tuple)) or len(candidates) > 20:
+            return self.llm._fallback(selected, "invalid_context")
+        public_hits = []
+        for hit in candidates:
+            # Internal sections must not crowd public answers out of the top-3.
+            # Validate each candidate before filtering; forged text is not an
+            # excuse to silently treat an unsafe result as an empty search.
+            chunks = self.llm._context([hit], selected)
+            if chunks is None:
+                return self.llm._fallback(selected, "invalid_context")
+            if chunks:
+                public_hits.append(hit)
+        return await self.llm.answer(question, public_hits[:3], language=selected)
